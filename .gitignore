@@ -16,3 +16,6 @@ vendor/
 
 # Data
 data/
+
+# Certs
+certs/

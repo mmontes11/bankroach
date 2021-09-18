@@ -1,28 +1,41 @@
 package cockroachdb
 
 import (
+	"context"
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	"github.com/cockroachdb/cockroach-go/crdb"
 
 	"github.com/golang-migrate/migrate/v4"
 	migratecrdb "github.com/golang-migrate/migrate/v4/database/cockroachdb"
+
+	// Postgres database driver: https://github.com/golang-migrate/migrate#databases
+	_ "github.com/lib/pq"
+	// Filesystem migration source driver: https://github.com/golang-migrate/migrate#migration-sources
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	// GitHub migration source driver: https://github.com/golang-migrate/migrate#migration-sources
+	_ "github.com/golang-migrate/migrate/v4/source/github"
 )
 
 const driverName = "postgres"
 
-type crdb struct {
+type TxFn = func(*sql.Tx) error
+
+type CRDB struct {
 	*sql.DB
 	*migrate.Migrate
 }
 
-func (db *crdb) MigrateUp() error {
+func (db *CRDB) MigrateUp() error {
 	return runMigration(db.Up)
 }
 
-func (db *crdb) MigrateDown() error {
+func (db *CRDB) MigrateDown() error {
 	return runMigration(db.Down)
+}
+
+func (db *CRDB) ExecuteTx(ctx context.Context, txOpts *sql.TxOptions, txFn TxFn) error {
+	return crdb.ExecuteTx(ctx, db.DB, txOpts, txFn)
 }
 
 func runMigration(migration func() error) error {
@@ -33,7 +46,7 @@ func runMigration(migration func() error) error {
 	return nil
 }
 
-func New(dbUrl, migrationsFileUrl string) (*crdb, error) {
+func New(dbUrl, migrationsUrl string) (*CRDB, error) {
 	db, err := sql.Open(driverName, dbUrl)
 	if err != nil {
 		return nil, err
@@ -46,10 +59,10 @@ func New(dbUrl, migrationsFileUrl string) (*crdb, error) {
 	if err != nil {
 		return nil, err
 	}
-	migrate, err := migrate.NewWithDatabaseInstance(migrationsFileUrl, driverName, driver)
+	migrate, err := migrate.NewWithDatabaseInstance(migrationsUrl, driverName, driver)
 	if err != nil {
 		return nil, err
 	}
 
-	return &crdb{DB: db, Migrate: migrate}, nil
+	return &CRDB{DB: db, Migrate: migrate}, nil
 }

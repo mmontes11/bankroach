@@ -3,8 +3,8 @@ services:
   roach:
     image: cockroachdb/cockroach:latest
     volumes:
-        - ./data/roach:/cockroach/cockroach-data
-    command: start-single-node  --insecure
+      - ./data/roach:/cockroach/cockroach-data
+    command: start-single-node --insecure
     ports:
-        - "26257:26257"
-        - "8080:8080"
+      - "26257:26257"
+      - "8080:8080"
