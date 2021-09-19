@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"flag"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/gotway/gotway/pkg/log"
+	"github.com/mmontes11/bankroach/internal/config"
 	"github.com/mmontes11/bankroach/internal/controller"
 	"github.com/mmontes11/bankroach/internal/repository"
 	"github.com/mmontes11/bankroach/pkg/cockroachdb"
@@ -17,21 +16,10 @@ import (
 )
 
 func main() {
-	dbUrl := flag.String(
-		"db_url",
-		"postgres://roach:@localhost:26257/bankroach?sslmode=disable",
-		"CockroachDB URL connection string",
-	)
-	migrationsUrl := flag.String(
-		"migrations_url",
-		"file://migrations",
-		"Migrations file connection string",
-	)
-	flag.Parse()
-
+	conf := config.Get()
 	logger := log.NewLogger(log.Fields{
 		"service": "bankroach",
-	}, "local", "debug", os.Stdout)
+	}, conf.Env, conf.LogLevel, os.Stdout)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), []os.Signal{
 		syscall.SIGINT,
@@ -42,7 +30,7 @@ func main() {
 	)
 	defer cancel()
 
-	db, err := cockroachdb.New(*dbUrl, *migrationsUrl)
+	db, err := cockroachdb.New(conf.DBUrl, conf.MigrationsUrl)
 	if err != nil {
 		logger.Errorf("database error %v", err)
 	}
@@ -57,22 +45,22 @@ func main() {
 	logger.Info("migrations completed")
 
 	repo := repository.NewAccountRepo()
-	ctrl := controller.New(repo, db, logger.WithField("type", "controller"))
+	ctrl := controller.New(repo, db, conf, logger.WithField("type", "controller"))
 
 	var wg sync.WaitGroup
-	wg.Add(3)
-	for i := 0; i < 3; i++ {
+	wg.Add(conf.NumAccounts)
+	for i := 0; i < conf.NumAccounts; i++ {
 		go func() {
 			defer wg.Done()
-			ctrl.CreateAccount(ctx, 1000)
+			ctrl.CreateAccount(ctx, int64(conf.InitialBalance))
 		}()
 	}
 	wg.Wait()
 	logger.Info("accounts created")
 
-	s := scheduler.New(5*time.Second, func() {
-		logger.Infof("starting %d transaction workers", 10)
-		for i := 0; i < 10; i++ {
+	s := scheduler.New(conf.ScheduleInterval, func() {
+		logger.Infof("starting %d transaction workers", conf.NumWorkers)
+		for i := 0; i < conf.NumWorkers; i++ {
 			go func() {
 				if err := ctrl.Transfer(ctx); err != nil {
 					logger.Errorf("error transferring %v", err)

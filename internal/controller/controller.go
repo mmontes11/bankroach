@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/gotway/gotway/pkg/log"
+	"github.com/mmontes11/bankroach/internal/config"
 	"github.com/mmontes11/bankroach/internal/model"
 	"github.com/mmontes11/bankroach/internal/repository"
 	"github.com/mmontes11/bankroach/pkg/cockroachdb"
@@ -16,6 +17,7 @@ import (
 type controller struct {
 	repo   repository.AccountRepo
 	db     *cockroachdb.CRDB
+	config config.Config
 	logger log.Logger
 }
 
@@ -54,7 +56,7 @@ func (c *controller) PrintBalances(ctx context.Context) error {
 
 func (c *controller) Transfer(ctx context.Context) error {
 	return c.db.ExecuteTx(ctx, nil, func(tx *sql.Tx) error {
-		balance := rand.Int63n(1000)
+		balance := rand.Int63n(int64(c.config.InitialBalance))
 
 		source, err := c.repo.FindWithMinBalance(ctx, tx, balance)
 		if err != nil {
@@ -94,6 +96,16 @@ func (c *controller) Transfer(ctx context.Context) error {
 	})
 }
 
-func New(repo repository.AccountRepo, db *cockroachdb.CRDB, logger log.Logger) Controller {
-	return &controller{repo, db, logger}
+func New(
+	repo repository.AccountRepo,
+	db *cockroachdb.CRDB,
+	config config.Config,
+	logger log.Logger,
+) Controller {
+	return &controller{
+		repo:   repo,
+		db:     db,
+		config: config,
+		logger: logger,
+	}
 }
