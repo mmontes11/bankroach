@@ -31,7 +31,7 @@ func Get() Config {
 		NumAccounts:    env.GetInt("NUM_ACCOUNTS", 5),
 		InitialBalance: env.GetInt("INITIAL_BALANCE", 1000),
 
-		ScheduleInterval: env.GetDuration("SCHEDULE_INTERVAL_SECONDS", 5*time.Second),
+		ScheduleInterval: env.GetDuration("SCHEDULE_INTERVAL_SECONDS", 5) * time.Second,
 		NumWorkers:       env.GetInt("NUM_WORKERS", 10),
 
 		Env:      env.Get("ENV", "local"),
