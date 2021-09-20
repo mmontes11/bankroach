@@ -32,15 +32,15 @@ func main() {
 
 	db, err := cockroachdb.New(conf.DBUrl, conf.MigrationsUrl)
 	if err != nil {
-		logger.Errorf("database error %v", err)
+		logger.Fatalf("database error %v", err)
 	}
 	logger.Info("connected to database")
 
 	if err := db.MigrateDown(); err != nil {
-		logger.Errorf("error rolling back migrations %v", err)
+		logger.Fatalf("error rolling back migrations %v", err)
 	}
 	if err := db.MigrateUp(); err != nil {
-		logger.Errorf("error executing migrations %v", err)
+		logger.Fatalf("error executing migrations %v", err)
 	}
 	logger.Info("migrations completed")
 
