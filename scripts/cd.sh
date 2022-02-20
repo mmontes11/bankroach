@@ -2,9 +2,9 @@
 
 set -e
 
-repo="bankroach"
+repo="mmontes"
 release="bankroach"
-chart="mmontes11/bankroach"
+chart="mmontes/bankroach"
 namespace="bankroach"
 
 helm repo add "$repo" https://charts.mmontes-dev.duckdns.org
