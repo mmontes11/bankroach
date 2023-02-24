@@ -11,11 +11,7 @@ make run
 ```
 ##### Kubernetes
 ```bash
-helm repo add mmontes https://charts.mmontes-dev.duckdns.org
-```
-```bash
+helm repo add mmontes https://mmontes11.github.io/charts
 helm install cockroachdb-operator mmontes/cockroachdb-operator 
-```
-```bash
 helm install bankroach mmontes/bankroach 
 ```
