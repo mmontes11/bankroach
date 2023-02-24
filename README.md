@@ -5,8 +5,6 @@ Simple CRUD application using CockroachDB and Go
 ##### Run locally
 ```bash
 docker compose up -d
-```
-```bash
 make run
 ```
 ##### Kubernetes
